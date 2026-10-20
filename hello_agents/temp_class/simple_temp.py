@@ -45,6 +45,10 @@ def get_weather(city: str) -> str:
     
 import os
 from tavily import TavilyClient
+from dotenv import load_dotenv
+
+# 读取当前目录的.env,写入os.environ
+load_dotenv()
 
 def get_attraction(city: str, weather: str) -> str:
     """根据城市和天气，使用Tavily Search Api搜索并返回优化后的景点推荐
@@ -57,6 +61,32 @@ def get_attraction(city: str, weather: str) -> str:
         str: _description_
     """
     api_key = os.environ.get("TAVILY_API_KEY")
+    
+    if not api_key:
+        return "error: not config TAVILY_API_KEY in environment"
+    
+    tavily = TavilyClient(api_key=api_key)
+    
+    query = f"'{city}' 在 '{weather}' 天气下最值得去的旅游景点推荐及理由"
+    
+    try:
+        response = tavily.search(query=query, search_depth="basic", include_answer=True)
+        
+        if response.get("answer"):
+            return response["answer"]
+        
+        # 如果没有综合性的回答，则格式化原始结果
+        formatted_result = []
+        for result in response.get("result", []):
+            formatted_result.append(f"- {result['title']}: {result['content']}")
+            
+        if not formatted_result:
+            return "sorry, not find "
+        
+        return "根据搜索，为您找到以下信息:\n" + "\n".join(formatted_result)
+        
+    except Exception as e:
+        return f"error: invoke tavily error - {e}"
     
 
 
