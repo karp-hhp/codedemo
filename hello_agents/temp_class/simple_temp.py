@@ -193,6 +193,22 @@ def main():
         kwargs = dict(re.findall(r'(\w+)="([^"]*)"', args_str))
         
         if tool_name in available_tools:
+            """
+             **kwargs意思是说这是个dict，其分为两种不同的用法
+             1.函数定义时候使用（封包）
+             def fun(**kwargs):
+                pass
+                
+            调用的时候可以fun(a=1, b=2),相当于整成了dict传进去了，还可以fun()传空，但是不能fun({"a":1})
+            
+            2. 函数调用时候展开（解包）
+            def fun(city:str, weather:str):
+                pass
+                
+            params = {"city": "北京", "weather": "晴"}
+            fun(**params) 
+            ## 等价于 fun(city="北京", weather="晴")
+            """
             observation = available_tools[tool_name](**kwargs)
         else:
             observation = f"错误：未定义的工具 '{tool_name}'"
