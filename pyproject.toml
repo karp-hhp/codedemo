@@ -11,4 +11,5 @@ dependencies = [
     "requests>=2.34.2",
     # 一个强大的ai搜索api客户端，用于获取实时的网络搜索结果
     "tavily-python>=0.8.5",
+    "torch>=2.14.1",
 ]
