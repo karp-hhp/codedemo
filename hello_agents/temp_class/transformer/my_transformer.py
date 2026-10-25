@@ -96,7 +96,9 @@ class EncoderLayer(nn.Module):
         
     def forward(self, x, mask):
         # 1.多头自注意力
+        # x, x, x, mask 这四个参数分别是 query, key, value, mask, 传给了 MultiHeadAttention.forward()函数
         attn_output = self.self_attn(x, x, x, mask)
+        # 这里是标准的 残差连接 + 层归一化(Add & Norm)，先把 attn_output 经过 dropout，然后和原来的 x 相加，再进行层归一化
         x = self.norm1(x + self.dropout(attn_output))
         
         # 2.前馈网络
@@ -105,7 +107,7 @@ class EncoderLayer(nn.Module):
         # forward 函数呢？因为nn.Module 要求子类需要写的业务逻辑，这个forward函数会在 nn.Module自己定义的__call__中被调用，
         # 所以self.feed_forward(x) 其实调用到了PositionWiseFeedForward.forward(x)函数了； 同理其他的几个对象都是一样的意思
         ff_output = self.feed_forward(x)
-        x = self.norm2(x + self.dropout(attn_output))
+        x = self.norm2(x + self.dropout(ff_output))
         
         return x
     
