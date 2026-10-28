@@ -6,6 +6,8 @@ readme = "README.md"
 requires-python = ">=3.14" 
 
 dependencies = [
+    # 通过API提供结构化的Google搜索结果，能直接返回“答案摘要框”或精确的知识图谱信息
+    "google-search-results>=2.4.2",
     "openai>=3.35.1",
     "python-dotenv>=1.2.4",
     "requests>=2.34.2",
