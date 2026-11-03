@@ -37,6 +37,20 @@ class HelloAgentsLLM:
         
         print()
         return "".join(collected_content)
+    
+    def invoke(self, messages:list[dict[str, str]], **kwargs) -> str:
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=messages,
+                temperature=kwargs.get("temperature", 0.3),
+                max_tokens=kwargs.get("max_tokens", 4096),
+                **({k:v for k, v in kwargs.items() if k not in ["temperature", "max_tokens"]})
+            )
+            return response.choices[0].message.content
+        except Exception as e:
+            print(f"error invoke exception:{e}")
+            raise Exception(f"llm invoke failed:{str(e)}")
 
 
 if __name__ == "__main__":

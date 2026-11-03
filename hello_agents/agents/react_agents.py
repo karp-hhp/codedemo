@@ -1,10 +1,13 @@
 from serpapi import SerpApiClient
 from dotenv import load_dotenv
 import os
+from hello_agents_llm import HelloAgentsLLM
 
 from ..tools.tool_executor import ToolExecutor
 
 load_dotenv()
+
+
 def search(query: str) -> str:
     """
     一个基于SerpApi的实战网页搜索引擎工具。它会智能地解析搜索结果，
@@ -14,20 +17,20 @@ def search(query: str) -> str:
         api_key = os.getenv("SERP_API_KEY")
         if not api_key:
             return "error: serp api key not config in env"
-        
+
         params = {
-            "engine":"google",
-            "q":query,
-            "api_key":api_key,
-            "gl":"cn",
-            "hl":"zh-cn",
+            "engine": "google",
+            "q": query,
+            "api_key": api_key,
+            "gl": "cn",
+            "hl": "zh-cn",
         }
-        
+
         client = SerpApiClient(params)
         results = client.get_dict()
-        
+
         print(f"SerpApiClient results: {results}")
-        
+
         # 智能解析：优先寻找最直接的答案
         if "answer_box_list" in results:
             return "\n".join(results["answer_box_list"])
@@ -42,13 +45,13 @@ def search(query: str) -> str:
                 for i, res in enumerate(results["organic_results"][:3])
             ]
             return "\n\n".join(snippets)
-        
-        return  f"sorry, not find info about '{query}'"
+
+        return f"sorry, not find info about '{query}'"
     except Exception as e:
         print(f"error serpapi e:{e}")
         return f"error serpapi e:{e}"
-    
-    
+
+
 REACT_AGENT_PROMPT = """
 请注意，你是一个有能力调用外部工具的智能助手。
 
@@ -67,23 +70,55 @@ Question: {question}
 History: {history}
 """
 
-    
+
+class ReActAgent:
+    def __init__(
+        self, llm_client: HelloAgentsLLM, tool_executor: ToolExecutor, max_step: int = 5
+    ):
+        self.llm_client = llm_client
+        self.tool_executor = tool_executor
+        self.max_step = max_step
+        self.history = []
+
+    def run(self, question: str):
+        # 每次运行重置
+        self.history = []
+        current_step = 0
+
+        while current_step < self.max_step:
+            current_step += 1
+            print(f"current step: ${current_step}")
+
+            tools_desc = self.tool_executor.get_available_tools()
+            history_str = "\n".join(self.history)
+
+            prompt = REACT_AGENT_PROMPT.format(
+                tools=tools_desc, question=question, history=history_str
+            )
+            
+            messages = [{"role":"user", "content":prompt}]
+            response_text = self.llm_client.invoke(messages=messages)
+            
+            if not response_text:
+                print("error: llm not return vaild")
+            
+
 
 if __name__ == "__main__":
     # infos = search("华为的最新款手机介绍")
     # print(f"infos: ${infos}")
     print("begin run tool executor")
     tool_executor = ToolExecutor()
-    
+
     search_desc = "一个网页搜索引擎。当你需要回答关于时事、事实以及在你的知识库中找不到的信息时，应使用此工具。"
     tool_executor.register_tool("search", search_desc, search)
-    
+
     print("\n--- 可用的工具 ---")
     print(tool_executor.get_available_tools())
-    
+
     tool_name = "search"
     tool_input = "英伟达最新的GPU型号是什么"
-    
+
     tool_func = tool_executor.get_tool(tool_name=tool_name)
     if tool_func:
         observation = tool_func(tool_input)
